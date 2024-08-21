@@ -16,4 +16,5 @@ python toolbench/inference/qa_pipeline_multithread.py \
     --method CoT@1 \
     --input_query_file solvable_queries/test_instruction/${group}.json \
     --output_answer_file $OUTPUT_DIR/$group \
-    --num_thread 1 --overwrite
+    --num_thread 1 \
+    # --overwrite

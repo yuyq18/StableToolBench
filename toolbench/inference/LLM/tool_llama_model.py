@@ -15,8 +15,6 @@ from toolbench.utils import process_system_message
 from toolbench.model.model_adapter import get_conversation_template
 from toolbench.inference.utils import SimpleChatIO, generate_stream, react_parser
 import math
-from accelerate import Accelerator
-accelerator = Accelerator()
 
 class ToolLLaMA:
     def __init__(
@@ -49,12 +47,12 @@ class ToolLLaMA:
             config.rope_scaling = {"type": "linear", "factor": scaling_factor}
         config.use_cache = False
         # breakpoint()
-        # self.model = AutoModelForCausalLM.from_pretrained(
-        #     model_name_or_path, config=config, low_cpu_mem_usage=True, device_map="auto"
-        # )
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path, low_cpu_mem_usage=True, device_map="auto"
+            model_name_or_path, config=config, low_cpu_mem_usage=True, device_map="auto"
         )
+        # self.model = AutoModelForCausalLM.from_pretrained(
+        #     model_name_or_path, low_cpu_mem_usage=True, device_map="auto"
+        # )
         if self.tokenizer.pad_token_id == None:
             self.tokenizer.add_special_tokens({"bos_token": "<s>", "eos_token": "</s>", "pad_token": "<pad>"})
             self.model.resize_token_embeddings(len(self.tokenizer))

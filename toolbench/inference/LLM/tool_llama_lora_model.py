@@ -11,10 +11,11 @@ from transformers import (
     AutoTokenizer,
     LlamaForCausalLM,
 )
+import transformers
 from toolbench.utils import process_system_message
 from toolbench.model.model_adapter import get_conversation_template
 from toolbench.inference.utils import SimpleChatIO, generate_stream, react_parser
-
+import math
 
 class ToolLLaMALoRA:
     def __init__(
@@ -25,15 +26,33 @@ class ToolLLaMALoRA:
             device: str="cuda", 
             cpu_offloading: bool=False, 
             load_8bit: bool=False,
-            max_sequence_length: int=8192
+            max_sequence_length: int=8192,
+            max_source_sequence_length: int=4096
         ) -> None:
         super().__init__()
         self.model_name = model_name_or_path
         self.template = template
         self.max_sequence_length = max_sequence_length
-        self.tokenizer = AutoTokenizer.from_pretrained(base_name_or_path, use_fast=False, model_max_length=self.max_sequence_length, padding_side="right")
+        self.max_source_sequence_length = max_source_sequence_length
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            base_name_or_path, 
+            use_fast=False, 
+            model_max_length=self.max_sequence_length, 
+            padding_side="right",
+            device_map="auto")
+        config = transformers.AutoConfig.from_pretrained(
+            model_name_or_path,
+            trust_remote_code=True,
+            # cache_dir=training_args.cache_dir,
+        )
+        # Set RoPE scaling factor
+        if self.max_sequence_length > self.max_source_sequence_length:
+            scaling_factor = float(math.ceil(self.max_sequence_length / self.max_source_sequence_length))
+            config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+        config.use_cache = False
         model = LlamaForCausalLM.from_pretrained(
             base_name_or_path,
+            config=config,
             load_in_8bit=load_8bit,
             torch_dtype=torch.float16,
             device_map="auto"

@@ -419,7 +419,7 @@ class pipeline_runner:
         if args.backbone_model == "toolllama":
             # ratio = 4 means the sequence length is expanded by 4, remember to change the model_max_length to 8192 (2048 * ratio) for ratio = 4
             ratio = int(args.max_sequence_length/args.max_source_sequence_length)
-            replace_llama_with_condense(ratio=ratio)
+            # replace_llama_with_condense(ratio=ratio)
             if args.lora:
                 backbone_model = ToolLLaMALoRA(base_name_or_path=args.model_path, model_name_or_path=args.lora_path, max_sequence_length=args.max_sequence_length)
             else:
