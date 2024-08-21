@@ -9,7 +9,7 @@ import json
 import traceback
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
-def chat_completion_request(key, base_url, messages, tools=None, tool_choice=None, key_pos=None,
+def chat_completion_request(key, base_url, messages, tools=None, tool_choice="required", key_pos=None,
                             model="gpt-3.5-turbo", stop=None, process_id=0, **args):
     use_messages = []
     for message in messages:

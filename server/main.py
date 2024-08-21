@@ -135,6 +135,7 @@ def get_virtual_response(request: Request, info: Info):
             print("returning real_response")
             if CONFIG['is_save']:
                 save_cache(cache, tool_input, real_response, standard_category, tool_name, api_name)
+                print("=====saved real_response=====")
             return real_response
 
     """
@@ -311,4 +312,4 @@ Note that:
         return json.dumps(fake_error)
 
 if __name__ == "__main__":
-    uvicorn.run(app="main:app", host="0.0.0.0", port=CONFIG['port'])
+    uvicorn.run(app="main:app", host="127.0.0.1", port=CONFIG['port'])

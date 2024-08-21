@@ -164,5 +164,9 @@ server/tools
 data
 toolenv
 server/server_cache.tar.gz
+server/tool_response_cache.zip
+server/tools.zip
 .idea
 /server_docker/
+openai_key.json
+*.yml

@@ -57,8 +57,8 @@ class rapidapi_wrapper(base_env):
     def __init__(self, query_json, tool_descriptions, retriever, args, process_id=0):
         super(rapidapi_wrapper).__init__()
 
-        self.tool_root_dir = args.tool_root_dir
-        self.toolbench_key = args.toolbench_key
+        self.tool_root_dir = os.getenv("TOOL_ROOT_DIR", None)
+        self.toolbench_key = os.getenv("TOOLBENCH_KEY", None)
         self.rapidapi_key = args.rapidapi_key
         self.use_rapidapi_key = args.use_rapidapi_key
         self.api_customization = args.api_customization
@@ -76,7 +76,7 @@ class rapidapi_wrapper(base_env):
         self.api_name_reflect = {}
 
         if self.retriever is not None:
-            query_json = self.retrieve_rapidapi_tools(self.input_description, args.retrieved_api_nums, args.tool_root_dir)
+            query_json = self.retrieve_rapidapi_tools(self.input_description, args.retrieved_api_nums, self.tool_root_dir)
             data_dict = self.fetch_api_json(query_json)
             tool_descriptions = self.build_tool_description(data_dict)
         else:
@@ -411,6 +411,7 @@ class pipeline_runner:
         self.add_retrieval = add_retrieval
         self.process_id = process_id
         self.server = server
+        self.tool_root_dir = os.getenv("TOOL_ROOT_DIR", None)
         if not self.server: self.task_list = self.generate_task_list()
         else: self.task_list = []
 
@@ -421,9 +422,9 @@ class pipeline_runner:
             ratio = int(args.max_sequence_length/args.max_source_sequence_length)
             replace_llama_with_condense(ratio=ratio)
             if args.lora:
-                backbone_model = ToolLLaMALoRA(base_name_or_path=args.model_path, model_name_or_path=args.lora_path, max_sequence_length=args.max_sequence_length)
+                backbone_model = ToolLLaMALoRA(base_name_or_path=args.model_path, model_name_or_path=args.lora_path, max_sequence_length=args.max_sequence_length, max_source_sequence_length=args.max_source_sequence_length)
             else:
-                backbone_model = ToolLLaMA(model_name_or_path=args.model_path, max_sequence_length=args.max_sequence_length)
+                backbone_model = ToolLLaMA(model_name_or_path=args.model_path, max_sequence_length=args.max_sequence_length, max_source_sequence_length=args.max_source_sequence_length)
         else:
             backbone_model = args.backbone_model
         return backbone_model
@@ -442,7 +443,7 @@ class pipeline_runner:
             os.mkdir(answer_dir)
         method = args.method
         backbone_model = self.get_backbone_model()
-        white_list = get_white_list(args.tool_root_dir)
+        white_list = get_white_list(self.tool_root_dir)
         task_list = []
         querys = json.load(open(query_dir, "r"))
         for query_id, data_dict in enumerate(querys):
@@ -464,8 +465,8 @@ class pipeline_runner:
         if backbone_model == "chatgpt_function":
             # model = "gpt-3.5-turbo-16k-0613"
             # model = os.getenv('CHAT_MODEL', "gpt-3.5-turbo-16k-0613")
-            # base_url = os.getenv('OPENAI_API_BASE', None)
-            llm_forward = ChatGPTFunction(model=self.args.chatgpt_model, openai_key=openai_key, base_url=self.args.base_url)
+            base_url = os.getenv('OPENAI_API_BASE', None)
+            llm_forward = ChatGPTFunction(model=self.args.chatgpt_model, openai_key=openai_key, base_url=base_url)
         elif backbone_model == "davinci":
             model = os.getenv('CHAT_MODEL', "gpt-3.5-turbo-16k-0613")
             base_url = os.getenv('OPENAI_API_BASE', None)
@@ -527,7 +528,7 @@ class pipeline_runner:
         ) for callback in callbacks]
         chain,result = self.method_converter(
             backbone_model=backbone_model,
-            openai_key=args.openai_key,
+            openai_key=os.getenv("OPENAI_KEY", None),
             method=method,
             env=env,
             process_id=process_id,

@@ -10,10 +10,13 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
 )
+import transformers
 from toolbench.utils import process_system_message
 from toolbench.model.model_adapter import get_conversation_template
 from toolbench.inference.utils import SimpleChatIO, generate_stream, react_parser
-
+import math
+from accelerate import Accelerator
+accelerator = Accelerator()
 
 class ToolLLaMA:
     def __init__(
@@ -22,22 +25,43 @@ class ToolLLaMA:
             template:str="tool-llama-single-round", 
             device: str="cuda", 
             cpu_offloading: bool=False, 
-            max_sequence_length: int=8192
+            max_sequence_length: int=8192,
+            max_source_sequence_length: int=4096
         ) -> None:
         super().__init__()
         self.model_name = model_name_or_path
         self.template = template
         self.max_sequence_length = max_sequence_length
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False, model_max_length=self.max_sequence_length)
+        self.max_source_sequence_length = max_source_sequence_length
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name_or_path, 
+            use_fast=False, 
+            model_max_length=self.max_sequence_length,
+            device_map="auto")
+        config = transformers.AutoConfig.from_pretrained(
+            model_name_or_path,
+            trust_remote_code=True,
+            # cache_dir=training_args.cache_dir,
+        )
+        # Set RoPE scaling factor
+        if self.max_sequence_length > self.max_source_sequence_length:
+            scaling_factor = float(math.ceil(self.max_sequence_length / self.max_source_sequence_length))
+            config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+        config.use_cache = False
+        # breakpoint()
+        # self.model = AutoModelForCausalLM.from_pretrained(
+        #     model_name_or_path, config=config, low_cpu_mem_usage=True, device_map="auto"
+        # )
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path, low_cpu_mem_usage=True
+            model_name_or_path, low_cpu_mem_usage=True, device_map="auto"
         )
         if self.tokenizer.pad_token_id == None:
             self.tokenizer.add_special_tokens({"bos_token": "<s>", "eos_token": "</s>", "pad_token": "<pad>"})
             self.model.resize_token_embeddings(len(self.tokenizer))
         self.use_gpu = (True if device == "cuda" else False)
-        if (device == "cuda" and not cpu_offloading) or device == "mps":
-            self.model.to(device)
+        # if (device == "cuda" and not cpu_offloading) or device == "mps":
+        #     self.model.to(device)
+        # breakpoint()
         self.chatio = SimpleChatIO()
 
     def prediction(self, prompt: str, stop: Optional[List[str]] = None) -> str:
@@ -101,13 +125,14 @@ class ToolLLaMA:
                 content = process_system_message(content, functions)
             prompt += f"{role}: {content}\n"
         prompt += "Assistant:\n"
-        
+        breakpoint()
         if functions != []:
             predictions = self.prediction(prompt)
         else:
             predictions = self.prediction(prompt)
 
         decoded_token_len = len(self.tokenizer(predictions))
+        breakpoint()
         if process_id == 0:
             print(f"[process({process_id})]total tokens: {decoded_token_len}")
 
