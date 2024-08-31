@@ -39,7 +39,7 @@ def get_steps(example):
 
         answer_details = answer_details["next"][0]
 
-    return "\n".join(answer_steps), final_step
+    return "\n".join(answer_steps), answer_steps, final_step
 
 
 def generate_init_message_node(eg:ExecutionGraph,functions,query):

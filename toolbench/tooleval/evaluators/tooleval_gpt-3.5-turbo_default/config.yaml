@@ -6,7 +6,7 @@ apis_json: "your/path/to/api_pool.json"
 completions_kwargs:
   model: "gpt-3.5-turbo-16k"
   max_tokens: 1000
-  temperature: 0.2
+  temperature: 0
   timeout: 10
   functions:
     - name: "check_answer_status"

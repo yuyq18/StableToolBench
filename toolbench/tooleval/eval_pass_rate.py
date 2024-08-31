@@ -47,7 +47,7 @@ if __name__ == "__main__":
     def compute_pass_rate(query_id, example, evaluate_time):
         global evaluators
         evaluator = random.choice(evaluators)
-        answer_steps, final_step = get_steps(example)
+        answer_steps, answer_steps_list, final_step = get_steps(example)
         
         if "'name': 'Finish'" not in final_step:
             return query_id, AnswerStatus.Unsolved, evaluate_time
@@ -60,6 +60,7 @@ if __name__ == "__main__":
             example['answer'],
             return_reason=True
         )
+        # is_solved = AnswerStatus.Solved
 
         # return query_id, task_solvable, is_solved, label, reason, not_hallucinate, evaluate_time
         return query_id, is_solved, evaluate_time
@@ -70,9 +71,17 @@ if __name__ == "__main__":
         reference_path = f"{args.converted_answer_path}/{reference_model}/{test_set}.json"
         test_ids = list(json.load(open(os.path.join(args.test_ids, test_set+".json"), "r")).keys())
         reference_examples = json.load(open(reference_path, "r"))
-        if os.path.exists(f"{args.save_path}/{test_set}_{reference_model}.json") and not args.overwrite:
-            existed_ids = list(json.load(open(f"{args.save_path}/{test_set}_{reference_model}.json", "r")).keys())
-            label_cnt = json.load(open(f"{args.save_path}/{test_set}_{reference_model}.json", "r"))
+        if os.path.exists(f"{args.save_path}/{test_set}.json") and not args.overwrite:
+            old_existed_ids = list(json.load(open(f"{args.save_path}/{test_set}.json", "r")).keys())
+            old_label_cnt = json.load(open(f"{args.save_path}/{test_set}.json", "r"))
+            
+            existed_ids = []
+            label_cnt = {}
+            for query_id in old_existed_ids:
+                ans = old_label_cnt[query_id]
+                if len(ans['is_solved'].keys()) == args.evaluate_times:
+                    existed_ids.append(query_id)
+                    label_cnt[query_id] = ans
         else:
             existed_ids = []
             label_cnt = {}
@@ -99,9 +108,9 @@ if __name__ == "__main__":
                 query = example["query"]
                 tool_names = []
                 for tool_dict in example["available_tools"]:
-                    tool_name = tool_dict["name"]
+                    tool_name = tool_dict["function"]["name"]
                     tool_names.append(tool_name)
-                answer_steps, final_step = get_steps(example)
+                answer_steps, answer_steps_list, final_step = get_steps(example)
                 if query_id not in label_cnt:
                     label_cnt[query_id] = {}
                 label_cnt[query_id]["query"] = query
@@ -111,12 +120,14 @@ if __name__ == "__main__":
                 if 'is_solved' not in label_cnt[query_id]:
                     label_cnt[query_id]["is_solved"] = {}
                 label_cnt[query_id]["is_solved"][evaluate_time] = str(is_solved)
-                json.dump(label_cnt, open(f"{args.save_path}/{test_set}_{reference_model}.json", "w"), ensure_ascii=False, indent=4)
-        json.dump(label_cnt, open(f"{args.save_path}/{test_set}_{reference_model}.json", "w"), ensure_ascii=False, indent=4)
+                label_cnt[query_id]["length"] = len(answer_steps_list)
+                json.dump(label_cnt, open(f"{args.save_path}/{test_set}.json", "w"), ensure_ascii=False, indent=4)
+        json.dump(label_cnt, open(f"{args.save_path}/{test_set}.json", "w"), ensure_ascii=False, indent=4)
         
-        filename = f"{args.save_path}/{test_set}_{reference_model}.csv"
+        filename = f"{args.save_path}/{test_set}.csv"
         write_results(filename, reference_model, label_cnt)
         scores = []
+        lengths = []
         for runtime in range(args.evaluate_times):
             score = 0 
             for query_id in label_cnt:
@@ -129,7 +140,8 @@ if __name__ == "__main__":
                     score += 1
                 elif solved_dict[runtime] == "AnswerStatus.Unsure":
                     score += 0.5
-
+                if runtime == 0:
+                    lengths.append(label_cnt[query_id]["length"])
             
             scores.append(score / len(label_cnt))
     
@@ -139,5 +151,6 @@ if __name__ == "__main__":
         solve_rate = sum(scores) / len(scores) * 100
         std_dev = np.std(scores).item() * 100
         print(f"Solve rate: {solve_rate:.1f}% Std: {std_dev:.1f}%")
+        print(f"Average length: {sum(lengths) / len(lengths):.4f}")
 
         

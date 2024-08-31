@@ -161,6 +161,7 @@ cython_debug/
 server_raw
 server/tool_response_cache
 server/tools
+server/config.yml
 data
 toolenv
 server/server_cache.tar.gz
@@ -170,3 +171,5 @@ server/tools.zip
 /server_docker/
 openai_key.json
 *.yml
+models
+test_vllm.py
