@@ -37,6 +37,9 @@ def react_parser(string):
     action_input = [string[string.find("Action Input: ") + len("Action Input: "):]]
     return thought[0], action[0], action_input[0]
 
+def react_deparser(thought, action, action_input):
+    return f"Thought: {thought}\nAction: {action}\nAction Input: {action_input}"
+
 # For toolllama's predictions 
 def prepare_logits_processor(
     temperature: float, repetition_penalty: float, top_p: float, top_k: int
