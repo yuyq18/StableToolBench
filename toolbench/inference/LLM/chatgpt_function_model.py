@@ -165,4 +165,37 @@ if __name__ == "__main__":
 
     llm.change_messages(messages)
     output, error_code, token_usage = llm.parse(tools=tools, process_id=0)
-    print(output)
+    
+    # Output:
+    # {
+    #   'content': None, 
+    #   'refusal': None, 
+    #   'role': 'assistant', 
+    #   'function_call': None, 
+    #   'tool_calls': [
+    #         {
+    #             'id': 'call_HlkFwxcu58WVJUyQ8vrfzg4F', 
+    #             'function': {
+    #                 'arguments': '{"location": "San Francisco, CA", "unit": "celsius"}', 
+    #                 'name': 'get_current_weather'
+    #             }, 
+    #             'type': 'function'
+    #         }, 
+    #         {
+    #             'id': 'call_iw7GibDAdOQCHlPyljMADD5p', 
+    #             'function': {
+    #                 'arguments': '{"location": "Tokyo, Japan", "unit": "celsius"}', 
+    #                 'name': 'get_current_weather'
+    #             }, 
+    #             'type': 'function'
+    #         }, 
+    #         {
+    #             'id': 'call_K2nWhzVxGuLJA1U5HZx6Hz5t', 
+    #             'function': {
+    #                 'arguments': '{"location": "Paris, France", "unit": "celsius"}', 
+    #                 'name': 'get_current_weather'
+    #             }, 
+    #             'type': 'function'
+    #         }
+    #     ]
+    # }

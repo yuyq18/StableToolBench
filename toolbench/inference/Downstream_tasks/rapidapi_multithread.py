@@ -10,6 +10,8 @@ from toolbench.inference.LLM.chatgpt_function_model import ChatGPTFunction
 from toolbench.inference.LLM.davinci_model import Davinci
 from toolbench.inference.LLM.tool_llama_lora_model import ToolLLaMALoRA
 from toolbench.inference.LLM.tool_llama_model import ToolLLaMA
+from toolbench.inference.LLM.tool_llama_vllm import ToolLLaMA_vllm
+from toolbench.inference.LLM.llama3_sft_model import Llama3Model
 from toolbench.inference.LLM.retriever import ToolRetriever
 from toolbench.inference.Algorithms.single_chain import single_chain
 from toolbench.inference.Algorithms.DFS import DFS_tree_search
@@ -467,6 +469,12 @@ class pipeline_runner:
             # model = os.getenv('CHAT_MODEL', "gpt-3.5-turbo-16k-0613")
             base_url = os.getenv('OPENAI_API_BASE', None)
             llm_forward = ChatGPTFunction(model=self.args.chatgpt_model, openai_key=openai_key, base_url=base_url)
+        elif backbone_model == "llama3":
+            base_url = os.getenv('VLLM_API_BASE', None)
+            llm_forward = Llama3Model(model=self.args.model_path, openai_key=openai_key, base_url=base_url)
+        elif backbone_model == "ToolLLaMA_vllm":
+            base_url = os.getenv('VLLM_API_BASE', None)
+            llm_forward = ToolLLaMA_vllm(model=self.args.model_path, openai_key=openai_key, base_url=base_url)
         elif backbone_model == "davinci":
             model = os.getenv('CHAT_MODEL', "gpt-3.5-turbo-16k-0613")
             base_url = os.getenv('OPENAI_API_BASE', None)
