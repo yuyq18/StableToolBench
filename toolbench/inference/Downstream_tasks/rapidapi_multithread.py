@@ -12,6 +12,7 @@ from toolbench.inference.LLM.tool_llama_lora_model import ToolLLaMALoRA
 from toolbench.inference.LLM.tool_llama_model import ToolLLaMA
 from toolbench.inference.LLM.tool_llama_vllm import ToolLLaMA_vllm
 from toolbench.inference.LLM.llama3_sft_model import Llama3Model
+from toolbench.inference.LLM.qwen2_sft_model import Qwen2Model
 from toolbench.inference.LLM.retriever import ToolRetriever
 from toolbench.inference.Algorithms.single_chain import single_chain
 from toolbench.inference.Algorithms.DFS import DFS_tree_search
@@ -472,6 +473,9 @@ class pipeline_runner:
         elif backbone_model == "llama3":
             base_url = os.getenv('VLLM_API_BASE', None)
             llm_forward = Llama3Model(model=self.args.model_path, openai_key=openai_key, base_url=base_url)
+        elif backbone_model == "qwen2":
+            base_url = os.getenv('VLLM_API_BASE', None)
+            llm_forward = Qwen2Model(model=self.args.model_path, openai_key=openai_key, base_url=base_url)
         elif backbone_model == "ToolLLaMA_vllm":
             base_url = os.getenv('VLLM_API_BASE', None)
             llm_forward = ToolLLaMA_vllm(model=self.args.model_path, openai_key=openai_key, base_url=base_url)
