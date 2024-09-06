@@ -80,6 +80,8 @@ class rapidapi_wrapper(base_env):
             tool_descriptions = self.build_tool_description(data_dict)
         else:
             data_dict = self.fetch_api_json(query_json)
+            if len(data_dict["api_list"]) != len(tool_descriptions):
+                tool_descriptions = self.build_tool_description(data_dict)
 
         for k,api_json in enumerate(data_dict["api_list"]):
             standard_tool_name = tool_descriptions[k][0]
@@ -214,7 +216,7 @@ You have access of the following tools:\n'''
 
         pure_api_name = change_name(standardize(api_json["api_name"]))
         templete["name"] = pure_api_name+ f"_for_{standard_tool_name}"
-        templete["name"] = templete["name"][-64:]
+        # templete["name"] = templete["name"][-64:]
 
         templete["description"] = f"This is the subfunction for tool \"{standard_tool_name}\", you can use this tool."
         

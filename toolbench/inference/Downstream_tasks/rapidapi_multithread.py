@@ -32,7 +32,7 @@ def get_white_list(tool_root_dir):
     # print(tool_root_dir)
     white_list_dir = os.path.join(tool_root_dir)
     white_list = {}
-    for cate in tqdm(os.listdir(white_list_dir)):
+    for cate in os.listdir(white_list_dir):
         if not os.path.isdir(os.path.join(white_list_dir,cate)):
             continue
         for file in os.listdir(os.path.join(white_list_dir,cate)):
@@ -84,6 +84,8 @@ class rapidapi_wrapper(base_env):
             tool_descriptions = self.build_tool_description(data_dict)
         else:
             data_dict = self.fetch_api_json(query_json)
+            if len(data_dict["api_list"]) != len(tool_descriptions):
+                tool_descriptions = self.build_tool_description(data_dict)
 
         for k,api_json in enumerate(data_dict["api_list"]):
             standard_tool_name = tool_descriptions[k][0]
@@ -218,7 +220,7 @@ You have access of the following tools:\n'''
 
         pure_api_name = change_name(standardize(api_json["api_name"]))
         templete["name"] = pure_api_name+ f"_for_{standard_tool_name}"
-        templete["name"] = templete["name"][-64:]
+        # templete["name"] = templete["name"][-64:]
 
         templete["description"] = f"This is the subfunction for tool \"{standard_tool_name}\", you can use this tool."
         
@@ -317,18 +319,38 @@ You have access of the following tools:\n'''
             try:
                 json_data = json.loads(action_input,strict=False)
             except:
-                json_data = {}
-                if '"return_type": "' in action_input:
-                    if '"return_type": "give_answer"' in action_input:
-                        return_type = "give_answer"
-                    elif '"return_type": "give_up_and_restart"' in action_input:
-                        return_type = "give_up_and_restart"
-                    else:
-                        return_type = action_input[action_input.find('"return_type": "')+len('"return_type": "'):action_input.find('",')]
-                    json_data["return_type"] = return_type
-                if '"final_answer": "' in action_input:
-                    final_answer = action_input[action_input.find('"final_answer": "')+len('"final_answer": "'):]
-                    json_data["final_answer"] = final_answer
+                try:
+                    json_data = json.loads(action_input+'"}',strict=False)
+                except:
+                    json_data = {}
+                    if '"return_type":' in action_input:
+                        if '"return_type": "give_answer"' in action_input or '"return_type":"give_answer"' in action_input:
+                            return_type = "give_answer"
+                        elif '"return_type": "give_up_and_restart"' in action_input or "return_type":"give_up_and_restart" in action_input:
+                            return_type = "give_up_and_restart"
+                        else:
+                            return_type = "invalid"
+                        json_data["return_type"] = return_type
+                    elif "'return_type':" in action_input:
+                        if "'return_type': 'give_answer'" in action_input or "'return_type':'give_answer'" in action_input:
+                            return_type = "give_answer"
+                        elif "'return_type': 'give_up_and_restart'" in action_input or "'return_type':'give_up_and_restart'" in action_input:
+                            return_type = "give_up_and_restart"
+                        else:
+                            return_type = "invalid"
+                    if '"final_answer": "' in action_input:
+                        final_answer = action_input[action_input.find('"final_answer": "')+len('"final_answer": "'):]
+                        json_data["final_answer"] = final_answer
+                    elif '"final_answer":"' in action_input:
+                        final_answer = action_input[action_input.find('"final_answer":"')+len('"final_answer":"'):]
+                        json_data["final_answer"] = final_answer
+                    elif "'final_answer': " in action_input:
+                        final_answer = action_input[action_input.find("'final_answer': ")+len("'final_answer': "):]
+                        json_data["final_answer"] = final_answer
+                    elif "'final_answer':" in action_input:
+                        final_answer = action_input[action_input.find("'final_answer':")+len("'final_answer':"):]
+                        json_data["final_answer"] = final_answer
+
             if "return_type" not in json_data.keys():
                 return "{error:\"must have \"return_type\"\"}", 2
             if json_data["return_type"] == "give_up_and_restart":
